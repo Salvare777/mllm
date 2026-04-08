@@ -472,14 +472,24 @@ def _messages_to_prompt(
     """
     # Flatten each message into a plain dict for the tokenizer.
     msg_dicts: List[Dict[str, Any]] = []
-    for msg in messages:
+    for msg in messages: # changed
         content = msg.content
         if isinstance(content, list):
-            # Multimodal: extract only text parts for the prompt string.
-            text_parts = [p.text for p in content if p.type == "text" and p.text]
-            content = "\n".join(text_parts) if text_parts else ""
+            content_list = []
+            for p in content:
+                if p.type == "text" and p.text:
+                    content_list.append({"type": "text", "text": p.text})
+                elif p.type == "image_url" and p.image_url is not None:
+                    content_list.append(
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": p.image_url.url},
+                        }
+                    )
+            content = content_list
         elif content is None:
             content = ""
+        
         d: Dict[str, Any] = {"role": msg.role, "content": content}
         if msg.name is not None:
             d["name"] = msg.name
